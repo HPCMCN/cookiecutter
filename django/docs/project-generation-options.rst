@@ -52,8 +52,23 @@ use_pycharm:
 use_docker:
     Indicates whether the project should be configured to use Docker_ and `Docker Compose`_.
 
-postgresql_version:
-    Select a PostgreSQL_ version to use. The choices are:
+database_engine:
+    Cookiecutter now supports the following databases:
+
+    1. Postgres
+    2. MySQL
+
+    Select the database you want to use for your project.
+
+database_version:
+    Select the version of the database you want to use for your project.
+
+    .. note::
+        | Database versions are shown in the format ``{database_engine}@{version}``.
+        | So make sure you select the versoin accoring to the database version you seleted in the previous step.
+        | For example, if you selected **Postgres** as your database, make sure to select from one of the options starting with ``postgresql@{version_you_want}`` and if you seleted **MySQL**, select one of the options starting with ``mysql@{version_you_want}``.
+
+    *Currently, following PostgreSQL versions are supported:*
 
     1. 14
     2. 13
@@ -61,13 +76,16 @@ postgresql_version:
     4. 11
     5. 10
 
+    *Currently, following MySQL versions are supported:*
+
+    1. 5.7
+
 cloud_provider:
     Select a cloud provider for static & media files. The choices are:
 
     1. AWS_
     2. GCP_
-    3. Azure_
-    4. None
+    3. None
 
     Note that if you choose no cloud provider, media files won't work.
 
@@ -95,10 +113,7 @@ frontend_pipeline:
 
     1. None
     2. `Django Compressor`_
-    3. `Gulp`_
-    4. `Webpack`_
-
-Both Gulp and Webpack support Bootstrap recompilation with real-time variables alteration.
+    3. `Gulp`_: support Bootstrap recompilation with real-time variables alteration.
 
 use_celery:
     Indicates whether the project should be configured to use Celery_.
@@ -148,11 +163,9 @@ debug:
 .. _PostgreSQL: https://www.postgresql.org/docs/
 
 .. _Gulp: https://github.com/gulpjs/gulp
-.. _Webpack: https://webpack.js.org
 
 .. _AWS: https://aws.amazon.com/s3/
 .. _GCP: https://cloud.google.com/storage/
-.. _Azure: https://azure.microsoft.com/en-us/products/storage/blobs/
 
 .. _Amazon SES: https://aws.amazon.com/ses/
 .. _Mailgun: https://www.mailgun.com

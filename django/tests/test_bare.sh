@@ -32,11 +32,13 @@ pytest
 # Make sure the check doesn't raise any warnings
 python manage.py check --fail-level WARNING
 
-# Run npm build script if package.json is present
 if [ -f "package.json" ]
 then
     npm install
-    npm run build
+    if [ -f "gulpfile.js" ]
+    then
+        npm run build
+    fi
 fi
 
 # Generate the HTML for the documentation

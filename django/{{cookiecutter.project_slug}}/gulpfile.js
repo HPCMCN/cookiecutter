@@ -10,7 +10,6 @@ const pjson = require('./package.json')
 const autoprefixer = require('autoprefixer')
 const browserSync = require('browser-sync').create()
 const concat = require('gulp-concat')
-const tildeImporter = require('node-sass-tilde-importer');
 const cssnano = require ('cssnano')
 const imagemin = require('gulp-imagemin')
 const pixrem = require('pixrem')
@@ -28,6 +27,7 @@ function pathsConfig(appName) {
   const vendorsRoot = 'node_modules'
 
   return {
+    bootstrapSass: `${vendorsRoot}/bootstrap/scss`,
     vendorsJs: [
       `${vendorsRoot}/@popperjs/core/dist/umd/popper.js`,
       `${vendorsRoot}/bootstrap/dist/js/bootstrap.js`,
@@ -61,8 +61,8 @@ function styles() {
 
   return src(`${paths.sass}/project.scss`)
     .pipe(sass({
-      importer: tildeImporter,
       includePaths: [
+        paths.bootstrapSass,
         paths.sass
       ]
     }).on('error', sass.logError))
@@ -85,13 +85,13 @@ function scripts() {
 
 // Vendor Javascript minification
 function vendorScripts() {
-  return src(paths.vendorsJs, { sourcemaps: true })
+  return src(paths.vendorsJs)
     .pipe(concat('vendors.js'))
     .pipe(dest(paths.js))
     .pipe(plumber()) // Checks for errors
     .pipe(uglify()) // Minifies the js
     .pipe(rename({ suffix: '.min' }))
-    .pipe(dest(paths.js, { sourcemaps: '.' }))
+    .pipe(dest(paths.js))
 }
 
 // Image compression

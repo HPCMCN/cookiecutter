@@ -10,7 +10,6 @@ TODO: restrict Cookiecutter Django project initialization to
 """
 from __future__ import print_function
 
-import json
 import os
 import random
 import shutil
@@ -88,113 +87,21 @@ def remove_heroku_build_hooks():
     shutil.rmtree("bin")
 
 
-def remove_sass_files():
-    shutil.rmtree(os.path.join("{{cookiecutter.project_slug}}", "static", "sass"))
-
-
 def remove_gulp_files():
     file_names = ["gulpfile.js"]
     for file_name in file_names:
         os.remove(file_name)
+    remove_sass_files()
 
 
-def remove_webpack_files():
-    shutil.rmtree("webpack")
-    remove_vendors_js()
-
-
-def remove_vendors_js():
-    vendors_js_path = os.path.join(
-        "{{ cookiecutter.project_slug }}",
-        "static",
-        "js",
-        "vendors.js",
-    )
-    if os.path.exists(vendors_js_path):
-        os.remove(vendors_js_path)
+def remove_sass_files():
+    shutil.rmtree(os.path.join("{{cookiecutter.project_slug}}", "static", "sass"))
 
 
 def remove_packagejson_file():
     file_names = ["package.json"]
     for file_name in file_names:
         os.remove(file_name)
-
-
-def update_package_json(remove_dev_deps=None, remove_keys=None, scripts=None):
-    remove_dev_deps = remove_dev_deps or []
-    remove_keys = remove_keys or []
-    scripts = scripts or {}
-    with open("package.json", mode="r") as fd:
-        content = json.load(fd)
-    for package_name in remove_dev_deps:
-        content["devDependencies"].pop(package_name)
-    for key in remove_keys:
-        content.pop(key)
-    content["scripts"].update(scripts)
-    with open("package.json", mode="w") as fd:
-        json.dump(content, fd, ensure_ascii=False, indent=2)
-        fd.write("\n")
-
-
-def handle_js_runner(choice, use_docker, use_async):
-    if choice == "Gulp":
-        update_package_json(
-            remove_dev_deps=[
-                "@babel/core",
-                "@babel/preset-env",
-                "babel-loader",
-                "concurrently",
-                "css-loader",
-                "mini-css-extract-plugin",
-                "postcss-loader",
-                "postcss-preset-env",
-                "sass-loader",
-                "webpack",
-                "webpack-bundle-tracker",
-                "webpack-cli",
-                "webpack-dev-server",
-                "webpack-merge",
-            ],
-            remove_keys=["babel"],
-            scripts={
-                "dev": "gulp",
-                "build": "gulp generate-assets",
-            },
-        )
-        remove_webpack_files()
-    elif choice == "Webpack":
-        scripts = {
-            "dev": "webpack serve --config webpack/dev.config.js",
-            "build": "webpack --config webpack/prod.config.js",
-        }
-        remove_dev_deps = [
-            "browser-sync",
-            "cssnano",
-            "gulp",
-            "gulp-imagemin",
-            "gulp-plumber",
-            "gulp-postcss",
-            "gulp-rename",
-            "gulp-sass",
-            "gulp-uglify-es",
-        ]
-        if not use_docker:
-            dev_django_cmd = (
-                "uvicorn config.asgi:application --reload"
-                if use_async
-                else "python manage.py runserver_plus"
-            )
-            scripts.update(
-                {
-                    "dev": "concurrently npm:dev:*",
-                    "dev:webpack": "webpack serve --config webpack/dev.config.js",
-                    "dev:django": dev_django_cmd,
-                }
-            )
-        else:
-            remove_dev_deps.append("concurrently")
-        update_package_json(remove_dev_deps=remove_dev_deps, scripts=scripts)
-        remove_gulp_files()
 
 
 def remove_celery_files():
@@ -228,6 +135,32 @@ def remove_dotgitlabciyml_file():
 
 def remove_dotgithub_folder():
     shutil.rmtree(".github")
+
+
+def remove_postgres_env_files():
+    local_postgres_envs_path = os.path.join(".envs", ".local", ".postgres")
+    production_postgres_envs_path = os.path.join(".envs", ".production", ".postgres")
+
+    os.remove(local_postgres_envs_path)
+    os.remove(production_postgres_envs_path)
+
+
+def remove_mysql_env_files():
+    local_mysql_envs_path = os.path.join(".envs", ".local", ".mysql")
+    production_mysql_envs_path = os.path.join(".envs", ".production", ".mysql")
+
+    os.remove(local_mysql_envs_path)
+    os.remove(production_mysql_envs_path)
+
+
+def remove_postgres_docker_folder():
+    postgres_compose_path = os.path.join("compose", "production", "postgres")
+    shutil.rmtree(postgres_compose_path)
+
+
+def remove_mysql_docker_folder():
+    mysql_compose_path = os.path.join("compose", "production", "mysql")
+    shutil.rmtree(mysql_compose_path)
 
 
 def generate_random_string(
@@ -304,25 +237,62 @@ def generate_random_user():
     return generate_random_string(length=32, using_ascii_letters=True)
 
 
-def generate_postgres_user(debug=False):
+def generate_database_user(debug=False):
     return DEBUG_VALUE if debug else generate_random_user()
 
 
-def set_postgres_user(file_path, value):
-    postgres_user = set_flag(file_path, "!!!SET POSTGRES_USER!!!", value=value)
-    return postgres_user
+def set_database_user(file_path: str, value: str, database_engine: str):
+    database_user = set_flag(
+        file_path, f"!!!SET {database_engine.upper()}_USER!!!", value=value
+    )
+    return database_user
 
 
-def set_postgres_password(file_path, value=None):
-    postgres_password = set_flag(
+def set_database_password(file_path: str, database_engine: str, value: str = None):
+    database_password = set_flag(
         file_path,
-        "!!!SET POSTGRES_PASSWORD!!!",
+        f"!!!SET {database_engine.upper()}_PASSWORD!!!",
         value=value,
         length=64,
         using_digits=True,
         using_ascii_letters=True,
     )
-    return postgres_password
+    return database_password
+
+
+def set_mysql_root_password(file_path: str, database_engine: str, value: str = None):
+    database_root_password = set_flag(
+        file_path,
+        f"!!!SET {database_engine.upper()}_ROOT_PASSWORD!!!",
+        value=value,
+        length=74,
+        using_digits=True,
+        using_ascii_letters=True,
+    )
+    return database_root_password
+
+
+def get_database_env_path(env: str, database_engine: str):
+    local_postgres_envs_path = os.path.join(".envs", ".local", ".postgres")
+    production_postgres_envs_path = os.path.join(".envs", ".production", ".postgres")
+    local_mysql_envs_path = os.path.join(".envs", ".local", ".mysql")
+    production_mysql_envs_path = os.path.join(".envs", ".production", ".mysql")
+
+    is_mysql = database_engine == "mysql"
+    is_postgres = database_engine == "postgresql"
+
+    if env == "local":
+        if is_mysql:
+            return local_mysql_envs_path
+        if is_postgres:
+            return local_postgres_envs_path
+    if env == "prod":
+        if is_mysql:
+            return production_mysql_envs_path
+        if is_postgres:
+            return production_postgres_envs_path
+
+    return None
 
 
 def set_celery_flower_user(file_path, value):
@@ -350,23 +320,49 @@ def append_to_gitignore_file(ignored_line):
         gitignore_file.write("\n")
 
 
-def set_flags_in_envs(postgres_user, celery_flower_user, debug=False):
+def set_flags_in_envs(database_user, celery_flower_user, debug=False):
     local_django_envs_path = os.path.join(".envs", ".local", ".django")
     production_django_envs_path = os.path.join(".envs", ".production", ".django")
-    local_postgres_envs_path = os.path.join(".envs", ".local", ".postgres")
-    production_postgres_envs_path = os.path.join(".envs", ".production", ".postgres")
+
+    selected_database = "{{ cookiecutter.database_engine }}"
 
     set_django_secret_key(production_django_envs_path)
     set_django_admin_url(production_django_envs_path)
 
-    set_postgres_user(local_postgres_envs_path, value=postgres_user)
-    set_postgres_password(
-        local_postgres_envs_path, value=DEBUG_VALUE if debug else None
+    set_database_user(
+        get_database_env_path(env="local", database_engine=selected_database),
+        value=database_user,
+        database_engine=selected_database,
     )
-    set_postgres_user(production_postgres_envs_path, value=postgres_user)
-    set_postgres_password(
-        production_postgres_envs_path, value=DEBUG_VALUE if debug else None
+    set_database_password(
+        get_database_env_path(env="local", database_engine=selected_database),
+        database_engine=selected_database,
+        value=DEBUG_VALUE if debug else None,
     )
+
+    set_database_user(
+        get_database_env_path(env="prod", database_engine=selected_database),
+        value=database_user,
+        database_engine=selected_database,
+    )
+    set_database_password(
+        get_database_env_path(env="prod", database_engine=selected_database),
+        database_engine=selected_database,
+        value=DEBUG_VALUE if debug else None,
+    )
+
+    if selected_database == "mysql":
+        set_mysql_root_password(
+            get_database_env_path(env="local", database_engine=selected_database),
+            database_engine=selected_database,
+            value=DEBUG_VALUE if debug else None,
+        )
+
+        set_mysql_root_password(
+            get_database_env_path(env="prod", database_engine=selected_database),
+            database_engine=selected_database,
+            value=DEBUG_VALUE if debug else None,
+        )
 
     set_celery_flower_user(local_django_envs_path, value=celery_flower_user)
     set_celery_flower_password(
@@ -386,7 +382,6 @@ def set_flags_in_settings_files():
 def remove_envs_and_associated_files():
     shutil.rmtree(".envs")
     os.remove("merge_production_dotenvs_in_dotenv.py")
-    shutil.rmtree("tests")
 
 
 def remove_celery_compose_dirs():
@@ -445,6 +440,10 @@ def main():
         remove_pycharm_files()
 
     if "{{ cookiecutter.use_docker }}".lower() == "y":
+        if "{{ cookiecutter.database_engine }}".lower() == "postgresql":
+            remove_mysql_docker_folder()
+        elif "{{ cookiecutter.database_engine }}".lower() == "mysql":
+            remove_postgres_docker_folder()
         remove_utility_files()
     else:
         remove_docker_files()
@@ -459,6 +458,11 @@ def main():
         remove_heroku_files()
     elif "{{ cookiecutter.frontend_pipeline }}" != "Django Compressor":
         remove_heroku_build_hooks()
+
+    if "{{ cookiecutter.database_engine }}".lower() == "postgresql":
+        remove_mysql_env_files()
+    elif "{{ cookiecutter.database_engine }}".lower() == "mysql":
+        remove_postgres_env_files()
 
     if (
         "{{ cookiecutter.use_docker }}".lower() == "n"
@@ -477,21 +481,13 @@ def main():
         if "{{ cookiecutter.keep_local_envs_in_vcs }}".lower() == "y":
             append_to_gitignore_file("!.envs/.local/")
 
-    if "{{ cookiecutter.frontend_pipeline }}" in ["None", "Django Compressor"]:
+    if "{{ cookiecutter.frontend_pipeline }}" != "Gulp":
         remove_gulp_files()
-        remove_webpack_files()
-        remove_sass_files()
         remove_packagejson_file()
         if "{{ cookiecutter.use_docker }}".lower() == "y":
             remove_node_dockerfile()
-    else:
-        handle_js_runner(
-            "{{ cookiecutter.frontend_pipeline }}",
-            use_docker=("{{ cookiecutter.use_docker }}".lower() == "y"),
-            use_async=("{{ cookiecutter.use_async }}".lower() == "y"),
-        )
 
-    if "{{ cookiecutter.cloud_provider }}" == "None":
+    if "{{ cookiecutter.cloud_provider}}" == "None":
         print(
             WARNING + "You chose not to use a cloud provider, "
             "media files won't be served in production." + TERMINATOR

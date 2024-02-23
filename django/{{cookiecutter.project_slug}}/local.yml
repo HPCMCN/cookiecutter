@@ -1,8 +1,14 @@
 version: '3'
 
 volumes:
+  {%- if cookiecutter.database_engine == 'postgresql' %}
   {{ cookiecutter.project_slug }}_local_postgres_data: {}
   {{ cookiecutter.project_slug }}_local_postgres_data_backups: {}
+  {%- endif %}
+  {%- if cookiecutter.database_engine == 'mysql' %}
+  {{ cookiecutter.project_slug }}_local_mysql_data: {}
+  {{ cookiecutter.project_slug }}_local_mysql_data_backups: {}
+  {%- endif %}
 
 services:
   django:{% if cookiecutter.use_celery == 'y' %} &django{% endif %}
@@ -11,8 +17,14 @@ services:
       dockerfile: ./compose/local/django/Dockerfile
     image: {{ cookiecutter.project_slug }}_local_django
     container_name: {{ cookiecutter.project_slug }}_local_django
+    platform: linux/x86_64
     depends_on:
+      {%- if cookiecutter.database_engine == 'postgresql' %}
       - postgres
+      {%- endif %}
+      {%- if cookiecutter.database_engine == 'mysql' %}
+      - mysql
+      {%- endif %}
       {%- if cookiecutter.use_celery == 'y' %}
       - redis
       {%- endif %}
@@ -23,11 +35,17 @@ services:
       - .:/app:z
     env_file:
       - ./.envs/.local/.django
+      {%- if cookiecutter.database_engine == 'postgresql' %}
       - ./.envs/.local/.postgres
+      {%- endif %}
+      {%- if cookiecutter.database_engine == 'mysql' %}
+      - ./.envs/.local/.mysql
+      {%- endif %}
     ports:
       - "8000:8000"
     command: /start
 
+  {%- if cookiecutter.database_engine == 'postgresql' %}
   postgres:
     build:
       context: .
@@ -35,14 +53,29 @@ services:
     image: {{ cookiecutter.project_slug }}_production_postgres
     container_name: {{ cookiecutter.project_slug }}_local_postgres
     volumes:
-      - {{ cookiecutter.project_slug }}_local_postgres_data:/var/lib/postgresql/data
-      - {{ cookiecutter.project_slug }}_local_postgres_data_backups:/backups
+      - {{ cookiecutter.project_slug }}_local_postgres_data:/var/lib/postgresql/data:Z
+      - {{ cookiecutter.project_slug }}_local_postgres_data_backups:/backups:z
     env_file:
       - ./.envs/.local/.postgres
+  {%- endif %}
+  {%- if cookiecutter.database_engine == 'mysql' %}
+  mysql:
+    build:
+      context: .
+      dockerfile: ./compose/production/mysql/Dockerfile
+    image: {{ cookiecutter.project_slug }}_production_mysql
+    container_name: mysql
+    volumes:
+      - {{ cookiecutter.project_slug }}_local_mysql_data:/var/lib/mysql:z
+      - {{ cookiecutter.project_slug }}_local_mysql_data_backups:/backups:z
+    env_file:
+      - ./.envs/.local/.mysql
+  {%- endif %}
 
   docs:
     image: {{ cookiecutter.project_slug }}_local_docs
     container_name: {{ cookiecutter.project_slug }}_local_docs
+    platform: linux/x86_64
     build:
       context: .
       dockerfile: ./compose/local/docs/Dockerfile
@@ -76,7 +109,12 @@ services:
     container_name: {{ cookiecutter.project_slug }}_local_celeryworker
     depends_on:
       - redis
+      {%- if cookiecutter.database_engine == 'postgresql' %}
       - postgres
+      {%- endif %}
+      {%- if cookiecutter.database_engine == 'mysql' %}
+      - mysql
+      {%- endif %}
       {%- if cookiecutter.use_mailhog == 'y' %}
       - mailhog
       {%- endif %}
@@ -89,7 +127,12 @@ services:
     container_name: {{ cookiecutter.project_slug }}_local_celerybeat
     depends_on:
       - redis
+      {%- if cookiecutter.database_engine == 'postgresql' %}
       - postgres
+      {%- endif %}
+      {%- if cookiecutter.database_engine == 'mysql' %}
+      - mysql
+      {%- endif %}
       {%- if cookiecutter.use_mailhog == 'y' %}
       - mailhog
       {%- endif %}
@@ -105,7 +148,7 @@ services:
     command: /start-flower
 
   {%- endif %}
-  {%- if cookiecutter.frontend_pipeline in ['Gulp', 'Webpack'] %}
+  {%- if cookiecutter.frontend_pipeline == 'Gulp' %}
 
   node:
     build:
@@ -122,9 +165,7 @@ services:
     command: npm run dev
     ports:
       - "3000:3000"
-      {%- if cookiecutter.frontend_pipeline == 'Gulp' %}
       # Expose browsersync UI: https://www.browsersync.io/docs/options/#option-ui
       - "3001:3001"
-      {%- endif %}
 
   {%- endif %}

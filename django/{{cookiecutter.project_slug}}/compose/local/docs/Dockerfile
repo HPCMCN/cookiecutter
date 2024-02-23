@@ -1,4 +1,4 @@
-ARG PYTHON_VERSION=3.10-slim-bullseye
+ARG PYTHON_VERSION=3.9-slim-bullseye
 
 # define an alias for the specfic python version used in this file.
 FROM python:${PYTHON_VERSION} as python
@@ -12,8 +12,13 @@ ENV PYTHONDONTWRITEBYTECODE 1
 RUN apt-get update && apt-get install --no-install-recommends -y \
   # dependencies for building Python packages
   build-essential \
+  {%- if cookiecutter.database_engine == "postgresql" %}
   # psycopg2 dependencies
   libpq-dev \
+  {%- elif cookiecutter.database_engine == "mysql" %}
+  # mysql dependency
+  default-libmysqlclient-dev \
+  {%- endif %}
   # cleaning up unused files
   && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
   && rm -rf /var/lib/apt/lists/*
@@ -37,8 +42,13 @@ ENV PYTHONDONTWRITEBYTECODE 1
 RUN apt-get update && apt-get install --no-install-recommends -y \
   # To run the Makefile
   make \
+  {%- if cookiecutter.database_engine == "postgresql" %}
   # psycopg2 dependencies
   libpq-dev \
+  {%- elif cookiecutter.database_engine == "mysql" %}
+  # mysql dependency
+  default-libmysqlclient-dev \
+  {%- endif %}
   # Translations dependencies
   gettext \
   # Uncomment below lines to enable Sphinx output to latex and pdf

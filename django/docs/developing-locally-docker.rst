@@ -3,6 +3,9 @@ Getting Up and Running Locally With Docker
 
 .. index:: Docker
 
+The steps below will get you up and running with a local development environment.
+All of these commands assume you are in the root of your generated project.
+
 .. note::
 
     If you're new to Docker, please be aware that some resources are cached system-wide
@@ -16,16 +19,10 @@ Prerequisites
 * Docker; if you don't have it yet, follow the `installation instructions`_;
 * Docker Compose; refer to the official documentation for the `installation guide`_.
 * Pre-commit; refer to the official documentation for the `pre-commit`_.
-* Cookiecutter; refer to the official GitHub repository of `Cookiecutter`_
 
 .. _`installation instructions`: https://docs.docker.com/install/#supported-platforms
 .. _`installation guide`: https://docs.docker.com/compose/install/
 .. _`pre-commit`: https://pre-commit.com/#install
-.. _`Cookiecutter`: https://github.com/cookiecutter/cookiecutter
-
-Before Getting Started
-----------------------
-.. include:: generate-project-block.rst
 
 Build the Stack
 ---------------
@@ -127,6 +124,30 @@ Consider the aforementioned ``.envs/.local/.postgres``: ::
 
 The three envs we are presented with here are ``POSTGRES_DB``, ``POSTGRES_USER``, and ``POSTGRES_PASSWORD`` (by the way, their values have also been generated for you). You might have figured out already where these definitions will end up; it's all the same with ``django`` service container envs.
 
+.. note::
+
+    If you are using MySQL, the ``.env`` structure will adapt accordingly. ::
+
+        .envs
+        ├── .local
+        │    ├── .django
+        │    └── .mysql
+        └── .production
+            ├── .django
+            └── .mysql
+
+    where the ``.mysql`` will contain: ::
+
+        # MySQL
+        # ------------------------------------------------------------------------------
+        MYSQL_HOST=mysql
+        MYSQL_PORT=3306
+        MYSQL_DATABASE={{ cookiecutter.project_slug }}
+        MYSQL_USER=ssdDFA2FEaFeFDasdG2432TT23TWE
+        MYSQL_PASSWORD=aldAdds82FD89rnkDFFfsNFDaf8493H
+        MYSQL_ROOT_PASSWORD=jSljDz4whHuwO3aJIgVBrqEml5Ycbghorep4uVJ4xjDYQu0LfuTZdctj7y0YcCLu
+
+
 One final touch: should you ever need to merge ``.envs/.production/*`` in a single ``.env`` run the ``merge_production_dotenvs_in_dotenv.py``: ::
 
     $ python merge_production_dotenvs_in_dotenv.py
@@ -212,11 +233,6 @@ Prerequisites:
 By default, it's enabled both in local and production environments (``local.yml`` and ``production.yml`` Docker Compose configs, respectively) through a ``flower`` service. For added security, ``flower`` requires its clients to provide authentication credentials specified as the corresponding environments' ``.envs/.local/.django`` and ``.envs/.production/.django`` ``CELERY_FLOWER_USER`` and ``CELERY_FLOWER_PASSWORD`` environment variables. Check out ``localhost:5555`` and see for yourself.
 
 .. _`Flower`: https://github.com/mher/flower
-
-Using Webpack or Gulp
-~~~~~~~~~~~~~~~~~~~~~
-
-When using Webpack or Gulp as the ``frontend_pipeline`` option, you should access your application at the address of the ``node`` service in order to see your correct styles. This is http://localhost:3000 by default. When using any of the other ``frontend_pipeline`` options, you should use the address of the ``django`` service, http://localhost:8000.
 
 Developing locally with HTTPS
 -----------------------------

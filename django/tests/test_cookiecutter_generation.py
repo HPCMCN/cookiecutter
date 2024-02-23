@@ -47,17 +47,18 @@ SUPPORTED_COMBINATIONS = [
     {"use_pycharm": "n"},
     {"use_docker": "y"},
     {"use_docker": "n"},
-    {"postgresql_version": "14"},
-    {"postgresql_version": "13"},
-    {"postgresql_version": "12"},
-    {"postgresql_version": "11"},
-    {"postgresql_version": "10"},
+    {"database_engine": "postgresql", "database_version": "postgresql@14"},
+    {"database_engine": "postgresql", "database_version": "postgresql@13"},
+    {"database_engine": "postgresql", "database_version": "postgresql@12"},
+    {"database_engine": "postgresql", "database_version": "postgresql@11"},
+    {"database_engine": "postgresql", "database_version": "postgresql@10"},
+    {"database_engine": "mysql", "database_version": "mysql@8.0.29"},
+    {"database_engine": "mysql", "database_version": "mysql@8.0"},
+    {"database_engine": "mysql", "database_version": "mysql@5.7"},
     {"cloud_provider": "AWS", "use_whitenoise": "y"},
     {"cloud_provider": "AWS", "use_whitenoise": "n"},
     {"cloud_provider": "GCP", "use_whitenoise": "y"},
     {"cloud_provider": "GCP", "use_whitenoise": "n"},
-    {"cloud_provider": "Azure", "use_whitenoise": "y"},
-    {"cloud_provider": "Azure", "use_whitenoise": "n"},
     {"cloud_provider": "None", "use_whitenoise": "y", "mail_service": "Mailgun"},
     {"cloud_provider": "None", "use_whitenoise": "y", "mail_service": "Mailjet"},
     {"cloud_provider": "None", "use_whitenoise": "y", "mail_service": "Mandrill"},
@@ -84,16 +85,7 @@ SUPPORTED_COMBINATIONS = [
     {"cloud_provider": "GCP", "mail_service": "SendinBlue"},
     {"cloud_provider": "GCP", "mail_service": "SparkPost"},
     {"cloud_provider": "GCP", "mail_service": "Other SMTP"},
-    {"cloud_provider": "Azure", "mail_service": "Mailgun"},
-    {"cloud_provider": "Azure", "mail_service": "Mailjet"},
-    {"cloud_provider": "Azure", "mail_service": "Mandrill"},
-    {"cloud_provider": "Azure", "mail_service": "Postmark"},
-    {"cloud_provider": "Azure", "mail_service": "Sendgrid"},
-    {"cloud_provider": "Azure", "mail_service": "SendinBlue"},
-    {"cloud_provider": "Azure", "mail_service": "SparkPost"},
-    {"cloud_provider": "Azure", "mail_service": "Other SMTP"},
-    # Note: cloud_providers GCP, Azure, and None
-    # with mail_service Amazon SES is not supported
+    # Note: cloud_providers GCP and None with mail_service Amazon SES is not supported
     {"use_async": "y"},
     {"use_async": "n"},
     {"use_drf": "y"},
@@ -101,7 +93,6 @@ SUPPORTED_COMBINATIONS = [
     {"frontend_pipeline": "None"},
     {"frontend_pipeline": "Django Compressor"},
     {"frontend_pipeline": "Gulp"},
-    {"frontend_pipeline": "Webpack"},
     {"use_celery": "y"},
     {"use_celery": "n"},
     {"use_mailhog": "y"},
@@ -125,8 +116,15 @@ SUPPORTED_COMBINATIONS = [
 UNSUPPORTED_COMBINATIONS = [
     {"cloud_provider": "None", "use_whitenoise": "n"},
     {"cloud_provider": "GCP", "mail_service": "Amazon SES"},
-    {"cloud_provider": "Azure", "mail_service": "Amazon SES"},
     {"cloud_provider": "None", "mail_service": "Amazon SES"},
+    {"database_engine": "postgresql", "database_version": "mysql@8.0.29"},
+    {"database_engine": "postgresql", "database_version": "mysql@8.0"},
+    {"database_engine": "postgresql", "database_version": "mysql@5.7"},
+    {"database_engine": "mysql", "database_version": "postgresql@14"},
+    {"database_engine": "mysql", "database_version": "postgresql@13"},
+    {"database_engine": "mysql", "database_version": "postgresql@12"},
+    {"database_engine": "mysql", "database_version": "postgresql@11"},
+    {"database_engine": "mysql", "database_version": "postgresql@10"},
 ]
 
 
@@ -135,11 +133,11 @@ def _fixture_id(ctx):
     return "-".join(f"{key}:{value}" for key, value in ctx.items())
 
 
-def build_files_list(base_dir):
+def build_files_list(root_dir):
     """Build a list containing absolute paths to the generated files."""
     return [
         os.path.join(dirpath, file_path)
-        for dirpath, subdirs, files in os.walk(base_dir)
+        for dirpath, subdirs, files in os.walk(root_dir)
         for file_path in files
     ]
 

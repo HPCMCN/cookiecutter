@@ -1,26 +1,33 @@
 import os
-from collections.abc import Sequence
 from pathlib import Path
 
-BASE_DIR = Path(__file__).parent.resolve()
-PRODUCTION_DOTENVS_DIR = BASE_DIR / ".envs" / ".production"
-PRODUCTION_DOTENV_FILES = [
-    PRODUCTION_DOTENVS_DIR / ".django",
-    PRODUCTION_DOTENVS_DIR / ".postgres",
+ROOT_DIR_PATH = Path(__file__).parent.resolve()
+PRODUCTION_DOTENVS_DIR_PATH = ROOT_DIR_PATH / ".envs" / ".production"
+PRODUCTION_DOTENV_FILE_PATHS = [
+    PRODUCTION_DOTENVS_DIR_PATH / ".django",
+    {%- if cookiecutter.database_engine == "postgres" %}
+        PRODUCTION_DOTENVS_DIR_PATH / ".postgres",
+    {%- elif cookiecutter.database_engine == 'mysql' %}
+        PRODUCTION_DOTENVS_DIR_PATH / ".mysql",
+    {%- endif %}
 ]
-DOTENV_FILE = BASE_DIR / ".env"
+
+DOTENV_FILE_PATH = ROOT_DIR_PATH / ".env"
 
 
-def merge(
-    output_file: Path,
-    files_to_merge: Sequence[Path],
-) -> None:
-    merged_content = ""
-    for merge_file in files_to_merge:
-        merged_content += merge_file.read_text()
-        merged_content += os.linesep
-    output_file.write_text(merged_content)
+def merge(output_file_path, merged_file_paths, append_linesep=True) -> None:
+    with open(output_file_path, "w") as output_file:
+        for merged_file_path in merged_file_paths:
+            with open(merged_file_path) as merged_file:
+                merged_file_content = merged_file.read()
+                output_file.write(merged_file_content)
+                if append_linesep:
+                    output_file.write(os.linesep)
+
+
+def main():
+    merge(DOTENV_FILE_PATH, PRODUCTION_DOTENV_FILE_PATHS)
 
 
 if __name__ == "__main__":
-    merge(DOTENV_FILE, PRODUCTION_DOTENV_FILES)
+    main()

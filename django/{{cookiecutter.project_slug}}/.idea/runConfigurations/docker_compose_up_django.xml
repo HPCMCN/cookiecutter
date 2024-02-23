@@ -10,7 +10,7 @@
             <option value="celeryworker"/>
             <option value="celerybeat"/>
             {%- endif %}
-            {%- if cookiecutter.frontend_pipeline in ['Gulp', 'Webpack'] %}
+            {%- if cookiecutter.frontend_pipeline == 'Gulp' %}
             <option value="node"/>
             {%- endif %}
           </list>

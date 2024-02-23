@@ -17,7 +17,7 @@ Understanding the Docker Compose Setup
 Before you begin, check out the ``production.yml`` file in the root of this project. Keep note of how it provides configuration for the following services:
 
 * ``django``: your application running behind ``Gunicorn``;
-* ``postgres``: PostgreSQL database with the application's relational data;
+* ``postgres/mysql``: PostgreSQL/MySQL database with the application's relational data;
 * ``redis``: Redis instance for caching;
 * ``traefik``: Traefik reverse proxy with HTTPS on by default.
 
@@ -84,37 +84,13 @@ You can read more about this feature and how to configure it, at `Automatic HTTP
 
 .. _Automatic HTTPS: https://docs.traefik.io/https/acme/
 
-.. _webpack-whitenoise-limitation:
 
-Webpack without Whitenoise limitation
--------------------------------------
-
-If you opt for Webpack without Whitenoise, Webpack needs to know the static URL at build time, when running ``docker-compose build`` (See ``webpack/prod.config.js``). Depending on your setup, this URL may come from the following environment variables:
-
-- ``AWS_STORAGE_BUCKET_NAME``
-- ``DJANGO_AWS_S3_CUSTOM_DOMAIN``
-- ``DJANGO_GCP_STORAGE_BUCKET_NAME``
-- ``DJANGO_AZURE_CONTAINER_NAME``
-
-The Django settings are getting these values at runtime via the ``.envs/.production/.django`` file , but Docker does not read this file at build time, it only look for a ``.env`` in the root of the project. Failing to pass the values correctly will result in a page without CSS styles nor javascript.
-
-To solve this, you can either:
-
-1. merge all the env files into ``.env`` by running::
-
-     merge_production_dotenvs_in_dotenv.py
-
-2. create a ``.env`` file in the root of the project with just variables you need. You'll need to also define them in ``.envs/.production/.django`` (hence duplicating them).
-3. set these variables when running the build command::
-
-     DJANGO_AWS_S3_CUSTOM_DOMAIN=example.com docker-compose -f production.yml build``.
-
-None of these options are ideal, we're open to suggestions on how to improve this. If you think you have one, please open an issue or a pull request.
-
-(Optional) Postgres Data Volume Modifications
+(Optional) Database Data Volume Modifications
 ---------------------------------------------
 
-Postgres is saving its database files to the ``production_postgres_data`` volume by default. Change that if you want something else and make sure to make backups since this is not done automatically.
+Postgres is saving its database files to the ``production_postgres_data`` volume by default.
+Similarly, MySQL is saving its database files to the ``production_mysql_data`` volume by default.
+Change that if you want something else and make sure to make backups since this is not done automatically.
 
 
 Building & Running Production Stack
