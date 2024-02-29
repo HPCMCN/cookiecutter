@@ -31,7 +31,11 @@ DATABASES["default"]["CONN_MAX_AGE"] = env.int("CONN_MAX_AGE", default=60)  # no
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": env("REDIS_URL"),
+        "LOCATION": "redis://{}:{}/{}".format(
+            env.str("REDIS_HOST", "redis"),
+            env.int("REDIS_PORT", 6379),
+            env.int("REDIS_DEFAULT_DB", 0)
+        ),
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
             # Mimicing memcache behavior.

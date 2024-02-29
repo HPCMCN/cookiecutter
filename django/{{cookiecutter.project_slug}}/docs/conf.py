@@ -26,7 +26,11 @@ else:
 {%- endif %}
 os.environ["DATABASE_URL"] = "sqlite:///readthedocs.db"
 {%- if cookiecutter.use_celery == 'y' %}
-os.environ["CELERY_BROKER_URL"] = os.getenv("REDIS_URL", "redis://redis:6379")
+os.environ["CELERY_BROKER_URL"] = "redis://{}:{}/{}".format(
+    os.getenv("REDIS_HOST", "redis"),
+    os.getenv("REDIS_PORT", 6379),
+    os.getenv("CELERY_BROKER_DB", 10)
+)
 {%- endif %}
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.local")
 django.setup()

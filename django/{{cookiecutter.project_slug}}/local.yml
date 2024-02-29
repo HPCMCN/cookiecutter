@@ -64,7 +64,7 @@ services:
       context: .
       dockerfile: ./compose/production/mysql/Dockerfile
     image: {{ cookiecutter.project_slug }}_production_mysql
-    container_name: mysql
+    container_name: {{ cookiecutter.project_slug }}_local_mysql
     volumes:
       - {{ cookiecutter.project_slug }}_local_mysql_data:/var/lib/mysql:z
       - {{ cookiecutter.project_slug }}_local_mysql_data_backups:/backups:z

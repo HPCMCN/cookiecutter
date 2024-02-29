@@ -10,7 +10,7 @@ psycopg2-binary==2.9.3  # https://github.com/psycopg/psycopg2
 {%- endif %}
 {%- endif %}
 {%- if cookiecutter.database_engine == "mysql" %}
-pymysql==1.1.0 # https://github.com/PyMySQL/mysqlclient
+pymysql==1.1.0 # https://github.com/PyMySQL/pymysql
 {%- endif %}
 {%- if cookiecutter.use_async == 'y' or cookiecutter.use_celery == 'y' %}
 watchfiles==0.17.0  # https://github.com/samuelcolvin/watchfiles

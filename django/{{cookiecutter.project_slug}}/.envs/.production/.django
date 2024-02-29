@@ -60,10 +60,14 @@ SENTRY_DSN=
 
 # Redis
 # ------------------------------------------------------------------------------
-REDIS_URL=redis://redis:6379/0
+REDIS_HOST=redis
+REDIS_PORT=6379
+REDIS_DEFAULT_DB=0
+
 {% if cookiecutter.use_celery == 'y' %}
 # Celery
 # ------------------------------------------------------------------------------
+CELERY_BROKER_DB=10
 
 # Flower
 CELERY_FLOWER_USER=!!!SET CELERY_FLOWER_USER!!!

@@ -43,7 +43,24 @@ APPEND_SLASH = False
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#databases
 {% if cookiecutter.use_docker == "y" -%}
-DATABASES = {"default": env.db("DATABASE_URL")}
+DATABASES = {
+    "default":  {
+        "ENGINE": "django.db.backends.mysql",
+        "NAME": env.str("MYSQL_DATABASE", "{{ cookiecutter.project_slug }}"),
+        "USER": env.str("MYSQL_USER", "!!!SET MYSQL_USER!!!"),
+        "PASSWORD": env.str("MYSQL_PASSWORD", "!!!SET MYSQL_PASSWORD!!!"),
+        "HOST": env.str("MYSQL_HOST", "mysql"),
+        "PORT": env.int("MYSQL_PORT", 3306),
+        "OPTIONS": {
+            "init_command": "SET foreign_key_checks = 0;",
+            "charset": "utf8",
+        },
+        "TEST": {
+            "charset": "utf8",
+            "COLLATION": "utf8_general_ci",
+        }
+    }
+}
 {%- else %}
 {% if cookiecutter.database_engine == 'postgresql' -%}
 DATABASES = {
@@ -267,8 +284,8 @@ LOGGING = {
     "disable_existing_loggers": False,
     "formatters": {
         "verbose": {
-            "format": "%(levelname)s %(asctime)s %(module)s "
-            "%(process)d %(thread)d %(message)s"
+            "format": "[%(levelname).4s] %(asctime)s T_%(thread)d <%(module)s:%(lineno)d>: %(message)s",
+            "datefmt": "%Y-%m-%d %H:%M:%S"
         }
     },
     "handlers": {
@@ -288,7 +305,11 @@ if USE_TZ:
     # https://docs.celeryq.dev/en/stable/userguide/configuration.html#std:setting-timezone
     CELERY_TIMEZONE = TIME_ZONE
 # https://docs.celeryq.dev/en/stable/userguide/configuration.html#std:setting-broker_url
-CELERY_BROKER_URL = env("CELERY_BROKER_URL")
+CELERY_BROKER_URL = "redis://{}:{}/{}".format(
+    env.str("REDIS_HOST", "redis"),
+    env.int("REDIS_PORT", 6379),
+    env.int("CELERY_BROKER_DB", 10)
+)
 # https://docs.celeryq.dev/en/stable/userguide/configuration.html#std:setting-result_backend
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 # https://docs.celeryq.dev/en/stable/userguide/configuration.html#std:setting-accept_content

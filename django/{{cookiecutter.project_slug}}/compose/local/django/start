@@ -6,6 +6,9 @@ set -o nounset
 
 
 python manage.py migrate
+python manage.py makemigrations
+python manage.py migrate
+
 {%- if cookiecutter.use_async == 'y' %}
 uvicorn config.asgi:application --host 0.0.0.0 --reload --reload-include '*.html'
 {%- else %}

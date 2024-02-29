@@ -6,9 +6,9 @@ PRODUCTION_DOTENVS_DIR_PATH = ROOT_DIR_PATH / ".envs" / ".production"
 PRODUCTION_DOTENV_FILE_PATHS = [
     PRODUCTION_DOTENVS_DIR_PATH / ".django",
     {%- if cookiecutter.database_engine == "postgres" %}
-        PRODUCTION_DOTENVS_DIR_PATH / ".postgres",
+    PRODUCTION_DOTENVS_DIR_PATH / ".postgres",
     {%- elif cookiecutter.database_engine == 'mysql' %}
-        PRODUCTION_DOTENVS_DIR_PATH / ".mysql",
+    PRODUCTION_DOTENVS_DIR_PATH / ".mysql",
     {%- endif %}
 ]
 
