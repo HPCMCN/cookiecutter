@@ -3,8 +3,10 @@
 # time: 2022/2/17 18:01
 # file: parser.py
 import logging
+from collections import ChainMap
 
-import pyexcel
+import numpy as np
+import pandas as pd
 from rest_framework import parsers, exceptions, serializers
 
 logger = logging.getLogger(__name__)
@@ -13,8 +15,8 @@ logger = logging.getLogger(__name__)
 class SerializerWriteMapping(object):
     """序列化器数据转换"""
 
-    def __init__(self, data, context, is_map=True):
-        self.data = data
+    def __init__(self, df, context, is_map=True):
+        self.data = df
         self.context = context
         self.is_map = is_map
 
@@ -32,7 +34,7 @@ class SerializerWriteMapping(object):
             else:
                 mappings[field.label] = field.field_name
                 depth_mappings[field.label] = field.field_name
-        return mappings, depth_mappings, find_mappings
+        return ChainMap(mappings, depth_mappings, find_mappings)
 
     # noinspection PyAttributeOutsideInit
     @property
@@ -46,26 +48,11 @@ class SerializerWriteMapping(object):
                 self._mappings = {}
         return self._mappings
 
-    @classmethod
-    def parse_items(cls, mappings, attrs):
-        items = {}
-        for k in attrs:
-            if k not in mappings[1]:
-                continue
-            if k not in mappings[0]:
-                if mappings[2][k] not in items:
-                    items[mappings[2][k]] = {}
-                items[mappings[2][k]][mappings[1][k]] = attrs[k]
-            else:
-                items[mappings[1][k]] = attrs[k]
-        return items
-
     def parse(self):
-        res = self.mappings and (
-            [self.parse_items(self.mappings, d) for d in self.data] or
-            [{v: "" for v in self.mappings.values()}]
-        ) or self.data
-        res = [d for d in res if any(d.values())]
+        if self.mappings:
+            self.data.rename(columns=self.mappings, inplace=True)
+        self.data.replace({np.nan: None})
+        res = self.data.to_dict(orient="records")
         logger.info(f"{res[0]}")
         return res
 
@@ -76,8 +63,6 @@ class ExcelReader(object):
     def __init__(self, obj, context):
         self.stream = self.open_file(obj)
         self.context = context
-        self.sheet = None
-        self.names = None
 
     @staticmethod
     def open_file(obj):
@@ -87,14 +72,12 @@ class ExcelReader(object):
         return obj
 
     def read(self, index=0, name_index=0):
-        fp = pyexcel.get_book(file_type="xlsx", file_content=self.stream.read())
-        self.sheet = fp.sheet_by_index(index)
-        self.sheet.name_columns_by_row(name_index)
-        assert self.sheet.number_of_rows() >= 1, "当前内容为空"
+        df = pd.read_excel(self.stream.read(), sheet_name=index, header=name_index, engine="openpyxl")
+        assert df.shape[0] >= 1, "当前内容为空"
+        return df
 
     def reader(self):
-        self.read()
-        return self.sheet.to_records()
+        return self.read()
 
 
 class DefaultExcelParser(parsers.BaseParser):

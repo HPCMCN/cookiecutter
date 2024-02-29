@@ -7,7 +7,7 @@ import logging
 from datetime import datetime
 from collections import OrderedDict
 
-import pyexcel
+import pandas as pd
 from django.conf import settings
 from rest_framework import renderers, serializers
 
@@ -64,6 +64,7 @@ class SerializerReadMapping(object):
         return items
 
     def no_mapping_empty_values(self, mappings):
+        """下发空数据, 也就是模板"""
         items = OrderedDict()
         for k in mappings:
             if isinstance(mappings[k], dict):
@@ -72,15 +73,24 @@ class SerializerReadMapping(object):
                 items[k] = ""
         return items
 
+    def extra_data(self):
+        # 常规drf结构, 不需要这个data
+        if "data" in self.data:
+            self.data = self.data["data"]
+        if "results" in self.data:
+            self.data = self.data["results"]
+        self.data = pd.DataFrame(self.data)
+
     def parse(self):
         logging.info("进入序列化转换阶段")
-        res = self.is_map and (
-            [self.parse_items(self.mappings, d) for d in
-             isinstance(self.data, list) and self.data or self.data["results"]] or
-            [self.mappings_empty_values(self.mappings)]
-        ) or self.data["results"] or [self.no_mapping_empty_values(self.mappings)]
+        self.extra_data()
+        if self.data.empty:
+            return pd.DataFrame([self.mappings_empty_values(self.mappings)])
+        if self.is_map:
+            self.data.rename(columns=self.mappings, inplace=True)
+        self.data.replace({None: ""})
         logging.info("序列化数据转换完成")
-        return res
+        return self.data
 
 
 class ExcelWriter(object):
@@ -89,7 +99,7 @@ class ExcelWriter(object):
     def __init__(self, filename, data, context):
         self.filename = filename
         self.context = context
-        self.data = data
+        self.data = pd.DataFrame(data)
 
     @property
     def local_filename(self):
@@ -99,7 +109,7 @@ class ExcelWriter(object):
         return os.path.join(base_dir, self.filename)
 
     def write(self):
-        pyexcel.save_as(records=self.data, dest_file_name=self.local_filename)
+        self.data.to_excel(self.local_filename, index=False)
 
     def render_response(self):
         self.context["response"]["Content-Type"] = "application/octet-stream"
@@ -110,9 +120,8 @@ class ExcelWriter(object):
             return fp.read()
 
     def render(self):
-        logging.info("写入实体文件!")
-        self.write()
         logging.info(f"已写入文件: {self.filename}")
+        self.write()
         return self.render_response()
 
 
