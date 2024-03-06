@@ -52,15 +52,18 @@ INSTALLED_APPS = ["whitenoise.runserver_nostatic"] + INSTALLED_APPS  # noqa F405
 
 # django-debug-toolbar
 # ------------------------------------------------------------------------------
-# https://django-debug-toolbar.readthedocs.io/en/latest/installation.html#prerequisites
-INSTALLED_APPS += ["debug_toolbar"]  # noqa F405
-# https://django-debug-toolbar.readthedocs.io/en/latest/installation.html#middleware
-MIDDLEWARE += ["debug_toolbar.middleware.DebugToolbarMiddleware"]  # noqa F405
-# https://django-debug-toolbar.readthedocs.io/en/latest/configuration.html#debug-toolbar-config
-DEBUG_TOOLBAR_CONFIG = {
-    "DISABLE_PANELS": ["debug_toolbar.panels.redirects.RedirectsPanel"],
-    "SHOW_TEMPLATE_CONTEXT": True,
-}
+DEBUG_TOOLBAR = False
+if DEBUG_TOOLBAR:
+    # https://django-debug-toolbar.readthedocs.io/en/latest/installation.html#prerequisites
+    INSTALLED_APPS += ["debug_toolbar"]  # noqa F405
+    # https://django-debug-toolbar.readthedocs.io/en/latest/installation.html#middleware
+    MIDDLEWARE += ["debug_toolbar.middleware.DebugToolbarMiddleware"]  # noqa F405
+    # https://django-debug-toolbar.readthedocs.io/en/latest/configuration.html#debug-toolbar-config
+    DEBUG_TOOLBAR_CONFIG = {
+        "DISABLE_PANELS": ["debug_toolbar.panels.redirects.RedirectsPanel"],
+        "SHOW_TEMPLATE_CONTEXT": True,
+    }
+
 # https://django-debug-toolbar.readthedocs.io/en/latest/installation.html#internal-ips
 INTERNAL_IPS = ["127.0.0.1", "10.0.2.2"]
 {% if cookiecutter.use_docker == 'y' -%}
@@ -95,5 +98,12 @@ CELERY_TASK_ALWAYS_EAGER = True
 CELERY_TASK_EAGER_PROPAGATES = True
 
 {%- endif %}
+
+# https://drf-spectacular.readthedocs.io/en/latest/settings.html
+# swagger认证中加入 basic认证, 方便调试
+if SPECTACULAR_SETTINGS.get("SERVE_AUTHENTICATION"):
+    SPECTACULAR_SETTINGS["SERVE_AUTHENTICATION"].append("rest_framework.authentication.BasicAuthentication")
+REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"] = REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"] \
+                                                   + ("rest_framework.authentication.BasicAuthentication",)
 # Your stuff...
-# ------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
